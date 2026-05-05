@@ -4,9 +4,9 @@
 
 include "HARDWARE.INC"
 
-AudioROM equ $4000
-AudioRAM equ $DD00
-WaveRAM equ $FF30
+def AudioROM equ $4000
+def AudioRAM equ $DD00
+def WaveRAM equ $FF30
 
 SECTION "Audio", ROMX[AudioROM], BANK[$1]
 
@@ -376,11 +376,11 @@ ChannelInit:
 	ld [C3MacroTrans], a
 	ld [C4MacroTrans], a
 	
-	;Disable macro times
-	ld [C1MacroTimes], a
-	ld [C2MacroTimes], a
-	ld [C3MacroTimes], a
-	ld [C4MacroTimes], a
+	;Clear macro flag
+	ld [C1InMacro], a
+	ld [C2InMacro], a
+	ld [C3InMacro], a
+	ld [C4InMacro], a
 	ret
 
 
@@ -1474,10 +1474,10 @@ EventMacro:
 	ld a, [bc]
 	ld [de], a
 	inc de
-	;Now check the macro times in RAM
+	;Now check the macro flag in RAM
 	ld a, [de]
 	and a
-	;If 0, then get the times in macro
+	;If 0, then set flag and get the times in macro
 	jr z, .EventMacro4
 
 	;Otherwise, skip
@@ -1485,6 +1485,7 @@ EventMacro:
 	jr .EventMacro5
 
 .EventMacro4
+	;Set the macro flag
 	ld a, 1
 	ld [de], a
 	;Now get the number of times in macro and load into RAM (times left)
@@ -1561,7 +1562,7 @@ EventMacroRetEnd:
 	;Reset macro transpose to 0
 	inc de
 	ld a, 0
-	;And macro times to 0
+	;And macro flag to 0
 	ld [de], a
 	inc de
 	ld [de], a
@@ -7088,7 +7089,7 @@ C1ModSeqDelay: ds 1
 C1ModSeq: ds 2
 C1MacroTimesLeft: ds 1
 C1MacroTrans: ds 1
-C1MacroTimes: ds 1
+C1InMacro: ds 1
 C1MacroRet: ds 2
 C2PlayFlag: ds 1
 C2Len: ds 1
@@ -7106,7 +7107,7 @@ C2ModSeqDelay: ds 1
 C2ModSeq: ds 2
 C2MacroTimesLeft: ds 1
 C2MacroTrans: ds 1
-C2MacroTimes: ds 1
+C2InMacro: ds 1
 C2MacroRet: ds 2
 C3PlayFlag: ds 1
 C3Len: ds 1
@@ -7124,7 +7125,7 @@ C3ModSeqDelay: ds 1
 C3ModSeq: ds 2
 C3MacroTimesLeft: ds 1
 C3MacroTrans: ds 1
-C3MacroTimes: ds 1
+C3InMacro: ds 1
 C3MacroRet: ds 2
 C4PlayFlag: ds 1
 C4Len: ds 1
@@ -7142,7 +7143,7 @@ C4ModSeqDelay: ds 1
 C4ModSeq: ds 2
 C4MacroTimesLeft: ds 1
 C4MacroTrans: ds 1
-C4MacroTimes: ds 1
+C4InMacro: ds 1
 C4MacroRet: ds 2
 NoteLens: ds 2
 CurRestartPos: ds 2
