@@ -4,19 +4,19 @@ The table consists of a series of five 16-bit values which each make up a "song"
 The table's location is found with the following series of instructions:
 
 ;Get song number from A
-    ld l, a
-    ld h, $00
+	ld l, a
+	ld h, $00
 	
 	;Get song address
 	;x10 bytes = Song entry length
-    add hl, hl
-    ld d, h
-    ld e, l
-    add hl, hl
-    add hl, hl
-    add hl, de	
+	add hl, hl
+	ld d, h
+	ld e, l
+	add hl, hl
+	add hl, hl
+	add hl, de	
 	;Add to the song table
-    ld de, SongTab
+	ld de, SongTab
 
 In hex values, this equates to:
 6F 26 00 29 54 5D 29 29 19 11 ?? ??
@@ -27,17 +27,17 @@ Note length tables are a series of 16-byte tables that specify various note leng
 
 The Instrument Table
 =======================================
-The table consists of a series of up to 32 16-bit values, the last 16 which are accessed using a flag. The instrument table is found with the following series of instructions:
-	;Shift right to calculate the instrument offset (2 x instrument number)
-    srl a
-    srl a
-    srl a
+The table consists of a series of up to 32 arrays of values, the last 16 which are accessed using a flag. The instrument table is found with the following series of instructions:
+	;Shift left to calculate the instrument offset (12 x instrument number)
+	srl a
+	srl a
+	srl a
 	;Add the extra 32 bytes if present
-    add d
+	add d
 	
 	;Get the current instrument offset in table
-    push hl
-    ld hl, InsTab
+	push hl
+	ld hl, InsTab
 
 In hex values, this equates to:
 CB 3F CB 3F CB 3F 82 E5 21 ?? ??
@@ -119,21 +119,21 @@ Like the song table, the macro table is comprised of 16-bit pointer values. The 
 Old method (for games pre-1999):
 
 	;Set channel length to 1
-    pop hl
-    ld de, -2
-    add hl, de
-    ld a, 1
-    ld [hl+], a
-	;Then get sequence number from parameter byte
-    inc bc
-    ld a, [bc]
+	pop hl
+	ld de, -2
+	add hl, de
+	ld a, 1
+	ld [hl+], a
+	;Then get macro number from parameter byte
+	inc bc
+	ld a, [bc]
 	;Multiply by 2
-    sla a
-	;Add to sequence table
-    ld de, SongMacroTab
-    add e
-    ld e, a
-    jr nc, .EventMacro2
+	sla a
+	;Add to macro table
+	ld de, SongMacroTab
+	add e
+	ld e, a
+	jr nc, .EventMacro2
 
 In hex, this code reads as follows:
 E1 11 FE FF 19 3E 01 22 03 0A CB 27 11 ?? ??
@@ -141,24 +141,20 @@ E1 11 FE FF 19 3E 01 22 03 0A CB 27 11 ?? ??
 New method (for games 1999-):
 
 	;Set channel length to 1
-    pop hl
-    ld de, -2
-    add hl, de
-    ld a, 1
-    ld [hl+], a
+	pop hl
+	ld de, -2
+	add hl, de
+	ld a, 1
+	ld [hl+], a
 	;Then get macro number from parameter byte
-    inc bc
-    ld a, [bc]
-    sla a
-    jr nc, .EventMacro2
+	inc bc
+	ld a, [bc]
+	sla a
+	jr nc, .EventMacro2
 	;Add to macro table
-    ld de, SongMacroTab
-    inc d
-    jr .EventMacro3
-
-.EventMacro2
-	;Add to macro table
-    ld de, SongMacroTab
+	ld de, SongMacroTab
+	inc d
+	jr .EventMacro3
 
 In hex, this code reads as follows:
 CB 27 30 06 11 ?? ?? 14 18 03
@@ -167,15 +163,16 @@ Sound Effects Table
 =======================================
 This table is a series of 4-byte entries which specify a number from a table (see below) for up to 4 macros to be played simultaneously; ideally, one should be played per channel, but unlike songs, they can be listed in any order, since their channel number is determined with the first byte of the macro (see below). If any of these values is FF, then the slot is unused.
 The table can be found using the following code:
+;Get SFX from number
 LoadSFX:
-    add a
-    add a
-    ld hl, SFXTab
-    add l
-    ld l, a
-    jr nc, GetSFX
+	add a
+	add a
+	ld hl, SFXTab
+	add l
+	ld l, a
+	jr nc, GetSFX
 
-    inc h
+	inc h
 
 In hex, this code reads as follows:
 87 87 21 ?? ?? 85 6F 30 01 24
@@ -184,10 +181,14 @@ Sound Effects Macro Table
 =======================================
 Another table comprised of 16-bit pointer values. The macro table can be found using the following method:
 
-    ld hl, SFXTable
-    sla a
-    add l
-    ld l, a
+	;Get SFX macro pointer from table
+	ld hl, SFXMacroTab
+	sla a
+	add l
+	ld l, a
+	jr nc, InitSFX
+
+	inc h
 
 In hex, this code reads as follows:
 21 ?? ?? CB 27 85 6F 30
@@ -199,6 +200,7 @@ Macros for each sound effect consist of a series of direct writes to audio regis
 1. Channel number (0-3)
 [Repeat]
 1. Delay before next event (in frames)
+	FF = Macro end
 2. NRx1 value (Channel length/duty)
 3. NRx2 value (Volume/envelope)
 4. NRx4 value (Period high/control)
@@ -211,9 +213,9 @@ There is only one waveform pattern per game which is only loaded when the driver
 This is found with the following instructions:
 
 	;Copy the waveform into wave RAM
-    ld de, WaveRAM
-    ld hl, Waveform
-    ld b, $10
+	ld de, WaveRAM
+	ld hl, Waveform
+	ld b, $10
 
 In hex, this code reads as follows:
 11 30 FF 21 ?? ?? 06 10
