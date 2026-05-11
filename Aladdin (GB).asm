@@ -126,13 +126,13 @@ MusicOn:
 	ret
 
 
-;Check the volume of the right speaker again - if it is not full, then set to max
-CheckVolR2:
-	ldh a, [rNR50]
 	;If at full volume
 	and %00000111
 	cp %00000111
 	jr z, CheckVolL2
+;Check the volume of the right speaker again - if it is not full, then set to max
+CheckVolR2:
+	ldh a, [rNR50]
 
 	;Increase volume
 	add 1
@@ -1040,7 +1040,7 @@ GetFreq:
 	ld d, a
 	;And get current note again
 	ld a, [bc]
-	;Mask off the highest bit
+	;Mask out the highest bit
 	and %01111111
 	;Add the transpose
 	add d
@@ -1062,7 +1062,7 @@ GetFreq:
 GetLen:
 	inc bc
 	ld a, [bc]
-	;Mask off the upper 4 bits to get the note length index
+	;Mask out the higher 4 bits to get the note length index
 	and %00001111
 	push hl
 	;Get the address of the current note length
@@ -1085,7 +1085,7 @@ GetLen:
 	ld [hl], a
 
 
-;Now get the instrument from the first bit of byte 1 and lower 4 bits of byte 2
+;Now get the instrument from the first bit of byte 1 and higher 4 bits of byte 2
 GetInst:
 	;Get the first note byte again
 	ld a, [CurCmd]
@@ -1098,7 +1098,7 @@ GetInst:
 	ld a, [bc]
 	;Mask out the lower 4 bits to get the instrument number
 	and %11110000
-	;Shift right to calculate the instrument offset (2 x instrument number)
+	;Shift right to calculate the instrument offset (12 x instrument number)
 	srl a
 	srl a
 	srl a
@@ -1347,8 +1347,8 @@ GetVCMD:
 
 EventTie:
 ;Delay the next note by length, increasing note length
-	;Get the note lengths pointer
 	;Parameters: -x (- = unused, x = length)
+	;Get the note lengths pointer
 	ld hl, NoteLens+1
 	ld a, [hl]
 	dec hl
@@ -1381,7 +1381,7 @@ EventTie:
 
 
 EventStop:
-	;Stop the channel
+;Stop the channel
 	pop hl
 	;Set the channel play flag to 0
 	ld bc, -3
@@ -1431,7 +1431,7 @@ EventNoise:
 
 EventMacro:
 ;Go to a macro (subroutine) with transpose for specified number of times
-;Parameters: xxxx yy zz (X = Pointer, Y = Transpose, Z = Number of times)
+;Parameters: xx yy zz (X = Macro number, Y = Transpose, Z = Number of times)
 ;(Note: 1 level only)
 	;Set channel length to 1
 	pop hl
@@ -1510,7 +1510,6 @@ EventMacro:
 	ld [de], a
 	jp GotoRestart
 
-
 EventMacroRet:
 ;Return from the current macro
 	inc bc
@@ -1559,7 +1558,7 @@ EventMacroRet:
 
 
 EventMacroRetEnd:
-	;Reset macro transpose to 0
+;Reset macro transpose to 0
 	inc de
 	ld a, 0
 	;And macro flag to 0
@@ -1578,8 +1577,8 @@ EventMacroRetEnd:
 
 
 EventCondFlag:
-	;Set a conditional flag (not used by the driver)
-	;Parameters: xx (X = Value)
+;Set a conditional flag (not used by the driver)
+;Parameters: xx (X = Value)
 	inc bc
 	ld a, [bc]
 	ld [LoopFlag], a
@@ -1596,8 +1595,8 @@ EventCondFlag:
 
 
 EventGlobalPan:
-	;Set global panning
-	;Parameters: xx (X = Value, see NR51 usage)
+;Set global panning
+;Parameters: xx (X = Value, see NR51 usage)
 	inc bc
 	ld a, [bc]
 	ldh [rNR51], a
